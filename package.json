@@ -1,7 +1,8 @@
 {
-  "name": "my-v0-project",
+  "name": "mlbb-draft-assistant",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://houdeifa.github.io/mlbb-draft-assistant",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
