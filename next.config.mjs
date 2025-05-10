@@ -11,7 +11,14 @@ const nextConfig = {
     unoptimized: true,
   },
   basePath: '/mlbb-draft-assistant',
-  reactStrictMode: true
+  reactStrictMode: true,
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': '.',
+    }
+    return config
+  }
 }
 
 export default nextConfig
