@@ -12,10 +12,10 @@ const nextConfig = {
   },
   basePath: '/mlbb-draft-assistant',
   reactStrictMode: true,
-  swcMinify: true,
   experimental: {
-    appDir: true,
+    serverActions: true,
   },
+  swcMinify: true,
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
