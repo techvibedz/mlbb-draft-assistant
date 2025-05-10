@@ -23,7 +23,7 @@ print("Absolute path of .env:", os.path.abspath('.env'))
 
 # Load hero roles mapping
 try:
-    with open('hero_roles.json', 'r') as f:
+    with open('api/hero_roles.json', 'r') as f:
         HERO_ROLE_MAP = json.load(f)
 except Exception as e:
     print("Error loading hero_roles.json:", e, file=sys.stderr)
@@ -34,7 +34,7 @@ CORS(app)
 
 # Load hero data
 try:
-    with open('heroes.json', 'r') as f:
+    with open('api/heroes.json', 'r') as f:
         heroes_data = json.load(f)
 except Exception as e:
     print("Error loading heroes.json:", e, file=sys.stderr)
@@ -49,7 +49,7 @@ OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 def load_fallback_data():
     try:
-        with open('heroes.json', 'r') as f:
+        with open('api/heroes.json', 'r') as f:
             return json.load(f)
     except FileNotFoundError:
         return None

@@ -1,0 +1,34 @@
+{
+    "counters": ["Lancelot", "Fanny", "Ling"],
+    "synergies": ["Tigreal", "Atlas", "Khufra"],
+    "build": {
+        "items": [
+            {
+                "name": "Warrior Boots",
+                "description": "Provides physical defense and movement speed"
+            },
+            {
+                "name": "Blade of Despair",
+                "description": "Increases physical attack significantly"
+            },
+            {
+                "name": "Endless Battle",
+                "description": "Provides hybrid damage and sustain"
+            },
+            {
+                "name": "Brute Force Breastplate",
+                "description": "Increases defense and attack speed"
+            },
+            {
+                "name": "Immortality",
+                "description": "Revives hero once upon death"
+            },
+            {
+                "name": "Queen's Wings",
+                "description": "Provides damage reduction and lifesteal"
+            }
+        ],
+        "emblem": "Custom Assassin - Movement Speed, Physical Penetration, Killing Spree",
+        "spell": "Execute"
+    }
+} 
