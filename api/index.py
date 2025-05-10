@@ -33,8 +33,12 @@ app = Flask(__name__)
 CORS(app)
 
 # Load hero data
-with open('backend/heroes.json') as f:
-    heroes_data = json.load(f)
+try:
+    with open('heroes.json', 'r') as f:
+        heroes_data = json.load(f)
+except Exception as e:
+    print("Error loading heroes.json:", e, file=sys.stderr)
+    heroes_data = {}
 
 with open('backend/hero_roles.json') as f:
     hero_roles = json.load(f)
@@ -229,6 +233,9 @@ Format your response as JSON:
     except Exception as e:
         print("Lane validation AI error:", e)
         return jsonify({'error': 'AI validation failed'}), 500
+
+# For Vercel serverless functions
+app = app
 
 # For local development
 if __name__ == '__main__':
