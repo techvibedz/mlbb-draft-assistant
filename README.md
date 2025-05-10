@@ -10,6 +10,7 @@ A powerful draft assistant for Mobile Legends: Bang Bang that helps players make
 - Role-based filtering
 - Responsive design
 - Dark theme UI
+- Auto-sync with GitHub (Last tested: 2024-03-19 23:40:00)
 
 ## Tech Stack
 
