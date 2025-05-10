@@ -1,0 +1,44 @@
+{
+  "heroes": [
+    {
+      "name": "Layla",
+      "imageUrl": "https://static.wikia.nocookie.net/mobile-legends/images/8/8c/Layla_%28Mobile_Legends%29.png"
+    },
+    {
+      "name": "Miya",
+      "imageUrl": "https://static.wikia.nocookie.net/mobile-legends/images/2/2c/Miya_%28Mobile_Legends%29.png"
+    },
+    {
+      "name": "Alucard",
+      "imageUrl": "https://static.wikia.nocookie.net/mobile-legends/images/4/4c/Alucard_%28Mobile_Legends%29.png"
+    },
+    {
+      "name": "Franco",
+      "imageUrl": "https://static.wikia.nocookie.net/mobile-legends/images/5/5c/Franco_%28Mobile_Legends%29.png"
+    },
+    {
+      "name": "Balmond",
+      "imageUrl": "https://static.wikia.nocookie.net/mobile-legends/images/2/2c/Balmond_%28Mobile_Legends%29.png"
+    },
+    {
+      "name": "Eudora",
+      "imageUrl": "https://static.wikia.nocookie.net/mobile-legends/images/2/2c/Eudora_%28Mobile_Legends%29.png"
+    },
+    {
+      "name": "Zilong",
+      "imageUrl": "https://static.wikia.nocookie.net/mobile-legends/images/2/2c/Zilong_%28Mobile_Legends%29.png"
+    },
+    {
+      "name": "Bane",
+      "imageUrl": "https://static.wikia.nocookie.net/mobile-legends/images/2/2c/Bane_%28Mobile_Legends%29.png"
+    },
+    {
+      "name": "Tigreal",
+      "imageUrl": "https://static.wikia.nocookie.net/mobile-legends/images/2/2c/Tigreal_%28Mobile_Legends%29.png"
+    },
+    {
+      "name": "Alice",
+      "imageUrl": "https://static.wikia.nocookie.net/mobile-legends/images/2/2c/Alice_%28Mobile_Legends%29.png"
+    }
+  ]
+} 
