@@ -30,18 +30,14 @@ except Exception as e:
     HERO_ROLE_MAP = {}
 
 app = Flask(__name__)
-CORS(app, resources={
-    r"/*": {
-        "origins": [
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-            "http://localhost:3001",
-            "http://127.0.0.1:3001"
-        ],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
-    }
-})
+CORS(app)
+
+# Load hero data
+with open('backend/heroes.json') as f:
+    heroes_data = json.load(f)
+
+with open('backend/hero_roles.json') as f:
+    hero_roles = json.load(f)
 
 # OpenRouter API configuration
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
@@ -54,37 +50,30 @@ def load_fallback_data():
     except FileNotFoundError:
         return None
 
-@app.route('/analyze', methods=['POST'])
-def analyze_heroes():
-    try:
-        data = request.get_json()
-        print("Received data:", data)  # Debug print
-        
-        # Validate required fields
-        required_fields = ['my_hero', 'team_heroes', 'enemy_heroes']
-        for field in required_fields:
-            if field not in data:
-                return jsonify({'error': f'Missing required field: {field}'}), 400
+@app.route('/api/analyze', methods=['POST'])
+def analyze():
+    data = request.json
+    my_hero = data.get('my_hero', '').lower()
+    team_heroes = [h.lower() for h in data.get('team_heroes', [])]
+    enemy_heroes = [h.lower() for h in data.get('enemy_heroes', [])]
+    assigned_lanes = data.get('assigned_lanes', {})
+    banned_heroes = [h.lower() for h in data.get('banned_heroes', [])]
 
-        # New: Get assigned lanes for selected heroes
-        assigned_lanes = data.get('assigned_lanes', {})  # {hero_name: lane}
-        filled_lanes = set(assigned_lanes.values())
+    # New: Get assigned lanes for selected heroes
+    filled_lanes = set(assigned_lanes.values())
 
-        # Build team string with lane assignments to avoid f-string nesting issues
-        team_with_lanes = ", ".join([
-            f"{h} (Lane: {assigned_lanes.get(h, 'Unassigned')})" for h in [data['my_hero']] + data.get('team_heroes', [])
-        ])
+    # Build team string with lane assignments to avoid f-string nesting issues
+    team_with_lanes = ", ".join([
+        f"{h} (Lane: {assigned_lanes.get(h, 'Unassigned')})" for h in [my_hero] + team_heroes
+    ])
 
-        # Get banned heroes from request
-        banned_heroes = set([h.lower() for h in data.get('banned_heroes', [])])
-
-        # Construct the prompt for OpenRouter
-        prompt = f"""You are an expert Mobile Legends: Bang Bang draft assistant.
+    # Construct the prompt for OpenRouter
+    prompt = f"""You are an expert Mobile Legends: Bang Bang draft assistant.
 
 Here is the current draft:
-- My Hero: {data['my_hero']} (Lane: {assigned_lanes.get(data['my_hero'], 'Unassigned')})
+- My Hero: {my_hero} (Lane: {assigned_lanes.get(my_hero, 'Unassigned')})
 - My Team: {team_with_lanes}
-- Enemy Team: {', '.join(data.get('enemy_heroes', []))}
+- Enemy Team: {', '.join(enemy_heroes)}
 
 Your task:
 - Recommend only the remaining teammates needed to complete my team (so that my team has 5 heroes in total).
@@ -115,96 +104,91 @@ Format the response as a JSON object:
 }}
 """
 
-        try:
-            print("Calling OpenRouter AI...")  # Debug print
-            headers = {
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": "openai/gpt-3.5-turbo",  # Use a model supported by OpenRouter
-                "messages": [{"role": "user", "content": prompt}]
-            }
-            response = requests.post(OPENROUTER_API_URL, headers=headers, json=payload)
-            response.raise_for_status()  # Raise an error for bad responses
-            result = response.json()
-            print("OpenRouter response:", result)  # Debug print
-            analysis = json.loads(result['choices'][0]['message']['content'])
-            
-            # --- Synergy validation logic ---
-            valid_synergies = []
-            used_roles = set(filled_lanes)
-            picked_hero_names = set([data['my_hero'].lower()] + [h.lower() for h in data.get('team_heroes', [])])
-            if 'synergies' in analysis:
-                for hero in analysis['synergies']:
-                    if isinstance(hero, dict):
-                        hero_name = hero.get('name')
-                        hero_role = hero.get('role')
-                    else:
-                        hero_name = hero
-                        hero_role = None
-                    valid_roles = HERO_ROLE_MAP.get(hero_name, [])
-                    # Exclude banned heroes
-                    if hero_name and hero_name.lower() in banned_heroes:
-                        continue
-                    if hero_role and hero_role in valid_roles and hero_role not in used_roles and hero_name and hero_name.lower() not in picked_hero_names:
-                        valid_synergies.append({'name': hero_name, 'role': hero_role})
-                        used_roles.add(hero_role)
-                        picked_hero_names.add(hero_name.lower())
-                    elif not hero_role and hero_name and hero_name.lower() not in picked_hero_names:
-                        for r in valid_roles:
-                            if r not in used_roles:
-                                valid_synergies.append({'name': hero_name, 'role': r})
-                                used_roles.add(r)
-                                picked_hero_names.add(hero_name.lower())
-                                break
-            slots_left = 5 - (len(data.get('team_heroes', [])) + 1)
-            if len(valid_synergies) < slots_left:
-                for lane in ["Gold Lane", "EXP Lane", "Mid Lane", "Jungle", "Roam"]:
-                    if lane in used_roles:
-                        continue
-                    for hero_name, roles in HERO_ROLE_MAP.items():
-                        if lane in roles and hero_name.lower() not in picked_hero_names and hero_name.lower() not in banned_heroes and all(s['name'].lower() != hero_name.lower() for s in valid_synergies):
-                            valid_synergies.append({'name': hero_name, 'role': lane})
-                            used_roles.add(lane)
-                            picked_hero_names.add(hero_name.lower())
+    try:
+        print("Calling OpenRouter AI...")  # Debug print
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "openai/gpt-3.5-turbo",  # Use a model supported by OpenRouter
+            "messages": [{"role": "user", "content": prompt}]
+        }
+        response = requests.post(OPENROUTER_API_URL, headers=headers, json=payload)
+        response.raise_for_status()  # Raise an error for bad responses
+        result = response.json()
+        print("OpenRouter response:", result)  # Debug print
+        analysis = json.loads(result['choices'][0]['message']['content'])
+        
+        # --- Synergy validation logic ---
+        valid_synergies = []
+        used_roles = set(filled_lanes)
+        picked_hero_names = set([my_hero] + [h for h in team_heroes])
+        if 'synergies' in analysis:
+            for hero in analysis['synergies']:
+                if isinstance(hero, dict):
+                    hero_name = hero.get('name')
+                    hero_role = hero.get('role')
+                else:
+                    hero_name = hero
+                    hero_role = None
+                valid_roles = HERO_ROLE_MAP.get(hero_name, [])
+                # Exclude banned heroes
+                if hero_name and hero_name in banned_heroes:
+                    continue
+                if hero_role and hero_role in valid_roles and hero_role not in used_roles and hero_name and hero_name not in picked_hero_names:
+                    valid_synergies.append({'name': hero_name, 'role': hero_role})
+                    used_roles.add(hero_role)
+                    picked_hero_names.add(hero_name)
+                elif not hero_role and hero_name and hero_name not in picked_hero_names:
+                    for r in valid_roles:
+                        if r not in used_roles:
+                            valid_synergies.append({'name': hero_name, 'role': r})
+                            used_roles.add(r)
+                            picked_hero_names.add(hero_name)
                             break
-                    if len(valid_synergies) >= slots_left:
+        slots_left = 5 - (len(team_heroes) + 1)
+        if len(valid_synergies) < slots_left:
+            for lane in ["Gold Lane", "EXP Lane", "Mid Lane", "Jungle", "Roam"]:
+                if lane in used_roles:
+                    continue
+                for hero_name, roles in HERO_ROLE_MAP.items():
+                    if lane in roles and hero_name not in picked_hero_names and hero_name not in banned_heroes and all(s['name'] != hero_name for s in valid_synergies):
+                        valid_synergies.append({'name': hero_name, 'role': lane})
+                        used_roles.add(lane)
+                        picked_hero_names.add(hero_name)
                         break
-            analysis['synergies'] = valid_synergies[:slots_left]
-            # --- End validation logic ---
-            
-            # Transform the response to match frontend format
-            transformed_response = {
-                "synergies": analysis.get("synergies", []),
-                "build": {
-                    "items": [
-                        {"name": item, "description": f"Recommended item for {data['my_hero']}"}
-                        for item in analysis.get("recommended_build", {}).get("items", [])
-                    ],
-                    "emblem": analysis.get("recommended_build", {}).get("emblem", "Custom Assassin"),
-                    "spell": analysis.get("recommended_build", {}).get("spell", "Flicker")
-                }
+                if len(valid_synergies) >= slots_left:
+                    break
+        analysis['synergies'] = valid_synergies[:slots_left]
+        # --- End validation logic ---
+        
+        # Transform the response to match frontend format
+        transformed_response = {
+            "synergies": analysis.get("synergies", []),
+            "build": {
+                "items": [
+                    {"name": item, "description": f"Recommended item for {my_hero}"}
+                    for item in analysis.get("recommended_build", {}).get("items", [])
+                ],
+                "emblem": analysis.get("recommended_build", {}).get("emblem", "Custom Assassin"),
+                "spell": analysis.get("recommended_build", {}).get("spell", "Flicker")
             }
-            
-            return jsonify(transformed_response)
-        except Exception as e:
-            print("OpenRouter AI error:", e)  # Debug print
-            fallback_data = load_fallback_data()
-            if fallback_data:
-                return jsonify(fallback_data)
-            raise e
-
+        }
+        
+        return jsonify(transformed_response)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print("OpenRouter AI error:", e)  # Debug print
+        fallback_data = load_fallback_data()
+        if fallback_data:
+            return jsonify(fallback_data)
+        raise e
 
-@app.route('/validate-lane', methods=['POST'])
+@app.route('/api/validate-lane', methods=['POST'])
 def validate_lane():
-    data = request.get_json()
-    hero = data.get('hero')
-    lane = data.get('lane')
-    if not hero or not lane:
-        return jsonify({'error': 'Missing hero or lane'}), 400
+    data = request.json
+    hero = data.get('hero', '').lower()
+    lane = data.get('lane', '')
 
     # Gemini AI prompt
     prompt = f"""
@@ -246,5 +230,6 @@ Format your response as JSON:
         print("Lane validation AI error:", e)
         return jsonify({'error': 'AI validation failed'}), 500
 
+# For local development
 if __name__ == '__main__':
-    app.run(debug=True, port=5000) 
+    app.run(debug=True) 
