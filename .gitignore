@@ -63,3 +63,6 @@ Thumbs.db
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Sync script
+sync.sh
