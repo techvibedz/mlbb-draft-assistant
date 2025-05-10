@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import heroData from '@/data/heroes.json'
+import { config } from './app/config'
 
 interface Hero {
   id: number;
@@ -220,7 +221,7 @@ export default function MLBBDraftAssistant() {
         setIsAnalyzing(false)
         return
       }
-      const response = await fetch('http://localhost:5000/analyze', {
+      const response = await fetch(`${config.apiUrl}/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ my_hero: myHero, team_heroes, enemy_heroes, assigned_lanes, banned_heroes })
@@ -240,7 +241,7 @@ export default function MLBBDraftAssistant() {
     setHeroLanes(prev => ({ ...prev, [hero.id]: lane }))
     setLaneValidation(prev => ({ ...prev, [hero.id]: { is_optimal: false, explanation: 'Validating...' } }))
     try {
-      const res = await fetch('http://localhost:5000/validate-lane', {
+      const res = await fetch(`${config.apiUrl}/validate-lane`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ hero: hero.name, lane })
