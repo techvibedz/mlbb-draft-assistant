@@ -1,8 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
+  "buildCommand": "pnpm install && pnpm run build",
+  "outputDirectory": "out",
   "framework": "nextjs",
+  "installCommand": "pnpm install",
   "functions": {
     "api/**/*.py": {
       "runtime": "@vercel/python@2.0.0"
@@ -16,6 +17,12 @@
     {
       "src": "/(.*)",
       "dest": "/$1"
+    }
+  ],
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
     }
   ]
 } 
